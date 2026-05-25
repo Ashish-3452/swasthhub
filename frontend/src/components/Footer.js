@@ -5,7 +5,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <Box sx={{ bgcolor: '#0a192f', color: 'white', py: 6, mt: 8 }}>
+    <Box sx={{ bgcolor: '#cb2dcb', color: 'white', py: 6, mt: 8 }}>
       <Container maxWidth="lg">
         {/* ========== फ़ुटर मुख्य हेडिंग ========== */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>

@@ -1,0 +1,15 @@
+# Environment variables (secret keys)
+.env
+.env.local
+.env.production
+
+# Dependencies
+node_modules/
+
+# Build output
+build/
+dist/
+
+# OS generated files
+.DS_Store
+Thumbs.db

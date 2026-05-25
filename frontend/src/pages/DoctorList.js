@@ -24,7 +24,7 @@ import {
   LocationOn,
 } from '@mui/icons-material';
 
-const ENDPOINT = 'http://localhost:5000';
+const ENDPOINT = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 let socket;
 
 const DoctorList = () => {
@@ -55,7 +55,6 @@ const DoctorList = () => {
       const list = res.data;
       setDoctors(list);
       setFiltered(list);
-      // स्पेशलिटी की लिस्ट बनाओ
       const specs = [...new Set(list.map((d) => d.specialization).filter(Boolean))];
       setSpecialties(specs);
     } catch (err) {
@@ -65,7 +64,6 @@ const DoctorList = () => {
     }
   };
 
-  // फ़िल्टर लॉजिक
   useEffect(() => {
     let result = doctors;
     if (search.trim()) {
@@ -87,7 +85,6 @@ const DoctorList = () => {
         Find Doctors
       </Typography>
 
-      {/* ---------- सर्च और फ़िल्टर ---------- */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={4}>
           <TextField
@@ -95,12 +92,14 @@ const DoctorList = () => {
             placeholder="Search by name or specialty..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+              },
             }}
           />
         </Grid>
@@ -111,12 +110,14 @@ const DoctorList = () => {
             label="Specialty"
             value={specialty}
             onChange={(e) => setSpecialty(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <FilterList />
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <FilterList />
+                  </InputAdornment>
+                ),
+              },
             }}
           >
             <MenuItem value="All">All Specialties</MenuItem>
@@ -129,7 +130,6 @@ const DoctorList = () => {
         </Grid>
       </Grid>
 
-      {/* ---------- डॉक्टर कार्ड्स ---------- */}
       <Grid container spacing={3}>
         {loading
           ? Array.from({ length: 6 }).map((_, i) => (
@@ -198,7 +198,7 @@ const DoctorList = () => {
       </Grid>
 
       {!loading && filtered.length === 0 && (
-        <Typography variant="h6" sx={{ textAlign: 'center' }} sx={{ mt: 4 }} color="text.secondary">
+        <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }} color="text.secondary">
           No doctors found matching your criteria.
         </Typography>
       )}

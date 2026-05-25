@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Container, Typography, TextField, Button, Paper, Box, Avatar, IconButton,
-  CircularProgress, Tooltip,
 } from '@mui/material';
 import {
   Send, Person, LocalHospital, Mic, MicOff, VolumeUp, Image, Refresh,
@@ -46,7 +45,15 @@ const AIDoctorChat = () => {
       .catch(console.error);
   }, []);
 
-  const scrollToBottom = () => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // ऑटो-स्क्रॉल फ़ंक्शन – हर बार messages बदलने पर स्क्रॉल करें
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // messages अपडेट होने पर ऑटो-स्क्रॉल करें
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   // ---------- वॉइस इनपुट ----------
   const startListening = () => {

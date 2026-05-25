@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, Navigate } from 'react-router-dom';
 import api from '../utils/api';
 import io from 'socket.io-client';
 
@@ -8,7 +8,6 @@ import {
   Grid,
   Card,
   CardActionArea,
-  CardContent,
   Typography,
   Button,
   Avatar,
@@ -28,58 +27,56 @@ import {
 } from '@mui/icons-material';
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user'));
+  const user = JSON.parse(localStorage.getItem('user'));   // यदि user null है तो पूरा कम्पोनेंट लोड न हो, इसके लिए हम नीचे रीडायरेक्ट करेंगे
+
+  // सभी hooks कंडीशनल नहीं होने चाहिए, इसलिए उन्हें ऊपर रखें
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    fetchProfile();
-  }, []);
+    // केवल मरीज़ के लिए इनकमिंग कॉल लिसनर
+    if (!user || user.role !== 'patient') return;
+
+    const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
+    socket.emit('register-patient', user.id);
+
+    socket.on('incoming-call', ({ roomId, message }) => {
+      if (window.confirm(message || 'Doctor is calling you. Join now?')) {
+        window.location.href = `/video-call?room=${roomId}&role=receiver`;
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user]);
 
   useEffect(() => {
-  // केवल मरीज़ के लिए ही यह लिसनर चलाएं
-  if (!user || user.role !== 'patient') return;
+    if (!user) return;   // यह useEffect तब भी चल सकता है, पर user न हो तो कुछ न करें
 
-  const socket = io('http://localhost:5000');
-  
-  // मरीज़ को उसके ID से रजिस्टर करें ताकि डॉक्टर उसे ढूंढ सके
-  socket.emit('register-patient', user.id);
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/auth/me');
+        setProfile(res.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // इनकमिंग कॉल इवेंट सुनें
-  socket.on('incoming-call', ({ roomId, message }) => {
-    // एक कन्फर्मेशन डायलॉग दिखाएं
-    if (window.confirm(message || 'Doctor is calling you. Join now?')) {
-      window.location.href = `/video-call?room=${roomId}&role=receiver`;
-    }
-  });
+    fetchProfile();
+  }, [user]);   // user बदलने पर दोबारा प्रोफ़ाइल लोड करें
 
-  return () => {
-    socket.disconnect();
-  };
-}, [user]);
-
-  const fetchProfile = async () => {
-    try {
-      const res = await api.get('/auth/me');
-      setProfile(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // यदि उपयोगकर्ता लॉग इन नहीं है, तो सीधे लॉगिन पेज पर भेजें
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
 
   const handleLogout = () => {
     localStorage.clear();
-    navigate('/login');
+    window.location.href = '/login';   // पूर्ण रीडायरेक्ट
   };
-
-  if (!user) return null;
 
   const patientLinks = [
     { label: 'Find Doctors', icon: <Search />, path: '/doctors', color: '#1976d2' },

@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link as RouterLink } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
 import {
   Container,
   Typography,
   Grid,
   Card,
-  CardContent,
   TextField,
   MenuItem,
   Button,
@@ -45,7 +44,8 @@ const BookAppointment = () => {
     fetchDoctors();
   }, []);
 
-  const fetchSlots = async () => {
+  // fetchSlots को useCallback से मेमोइज़ करें ताकि वह डिपेंडेंसी में स्थिर रहे
+  const fetchSlots = useCallback(async () => {
     if (!selectedDoctor || !date) return;
     try {
       const res = await api.get(`/appointments/slots/${selectedDoctor}?date=${date}`);
@@ -54,11 +54,11 @@ const BookAppointment = () => {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [selectedDoctor, date]);
 
   useEffect(() => {
     if (date && selectedDoctor) fetchSlots();
-  }, [date, selectedDoctor]);
+  }, [date, selectedDoctor, fetchSlots]);   // अब fetchSlots डिपेंडेंसी में है
 
   const handleBook = async () => {
     if (!selectedSlot) {

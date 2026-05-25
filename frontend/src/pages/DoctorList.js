@@ -5,10 +5,8 @@ import io from 'socket.io-client';
 import {
   Container,
   Typography,
-  Grid,
   Card,
   CardActionArea,
-  CardContent,
   TextField,
   InputAdornment,
   MenuItem,

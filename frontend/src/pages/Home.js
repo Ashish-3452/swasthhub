@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import {
-  Container, Typography, Button, Grid, Card, CardContent, Box,
+  Container, Typography, Button, Grid, Card,  Box,
   TextField, InputAdornment, Paper, Skeleton
 } from '@mui/material';
 import {

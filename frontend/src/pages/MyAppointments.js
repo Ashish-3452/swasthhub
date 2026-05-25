@@ -2,26 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import {
-  Container, Typography, Card, Chip, Button, Skeleton, Box, Alert,
+  Container, Typography, Card, CardContent, Chip, Button, Skeleton, Box, Alert,
 } from '@mui/material';
 import { CalendarMonth, AccessTime, Person, Videocam } from '@mui/icons-material';
 import io from 'socket.io-client';
 
-const ENDPOINT = 'http://localhost:5000/api';
+const ENDPOINT = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 let socket;
 
 const MyAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
     fetchAppointments();
-
-    // सॉकेट कनेक्ट करें
     socket = io(ENDPOINT);
-
     return () => {
       if (socket) socket.disconnect();
     };
@@ -29,32 +27,37 @@ const MyAppointments = () => {
 
   const fetchAppointments = async () => {
     try {
+      setLoading(true);
       const res = await api.get('/appointments/my');
       setAppointments(res.data);
+      setError('');
     } catch (err) {
       console.error(err);
+      setError('Failed to load appointments.');
     } finally {
       setLoading(false);
     }
   };
 
-  // डॉक्टर के लिए कॉल शुरू करने का फ़ंक्शन
   const handleStartCall = (appointmentId, patientId) => {
-    // 1. सॉकेट इवेंट भेजो "start-call"
     socket.emit('start-call', { appointmentId, patientId });
-
-    // 2. बैकएंड से "call-started" इवेंट का इंतज़ार करो
     socket.on('call-started', ({ roomId }) => {
-      // 3. वीडियो कॉल पेज पर डॉक्टर को इनिशिएटर के रूप में भेजो
       navigate(`/video-call?room=${roomId}&role=initiator`);
     });
   };
+
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom>
         My Appointments
       </Typography>
+
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       {loading ? (
         Array.from({ length: 3 }).map((_, i) => (
@@ -96,7 +99,6 @@ const MyAppointments = () => {
                   color={apt.status === 'scheduled' ? 'success' : 'default'}
                   size="small"
                 />
-                {/* यहाँ रोल के अनुसार बटन दिखाओ */}
                 {apt.status === 'scheduled' && (
                   user?.role === 'doctor' ? (
                     <Button

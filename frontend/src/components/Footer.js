@@ -5,28 +5,38 @@ import { Link as RouterLink } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <Box sx={{ bgcolor: '#b13106', color: 'white', py: 6, mt: 8 }}>
+    <Box sx={{ bgcolor: '#0a192f', color: 'white', py: 6, mt: 8 }}>
       <Container maxWidth="lg">
-        <Grid container spacing={4}>
+        {/* ========== फ़ुटर मुख्य हेडिंग ========== */}
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            SwasthHub
+          </Typography>
+          <Typography variant="body1" sx={{ opacity: 0.8 }}>
+            Your AI-Integrated Telemedicine Platform
+          </Typography>
+        </Box>
 
-          {/* ब्रांड सेक्शन */}
-          <Grid item xs={12} md={4}>
+        {/* ========== तीन कॉलम ========== */}
+        <Grid container spacing={4} justifyContent="center">
+          {/* कॉलम 1: ब्रांड और सोशल आइकन */}
+          <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
-              SwasthHub
+              Connect With Us
             </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8, mb: 2 }}>
-              AI-Integrated Telemedicine Platform connecting patients with trusted doctors in real‑time.
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1 }}>
               <IconButton color="inherit" aria-label="Facebook"><Facebook /></IconButton>
               <IconButton color="inherit" aria-label="Twitter"><Twitter /></IconButton>
               <IconButton color="inherit" aria-label="Instagram"><Instagram /></IconButton>
               <IconButton color="inherit" aria-label="LinkedIn"><LinkedIn /></IconButton>
             </Box>
+            <Typography variant="body2" sx={{ opacity: 0.8, mt: 2 }}>
+              Connecting patients with trusted doctors in real‑time.
+            </Typography>
           </Grid>
 
-          {/* त्वरित लिंक */}
-          <Grid item xs={12} sm={6} md={4}>
+          {/* कॉलम 2: त्वरित लिंक */}
+          <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
               Quick Links
             </Typography>
@@ -44,8 +54,8 @@ const Footer = () => {
             </Link>
           </Grid>
 
-          {/* संपर्क सेक्शन */}
-          <Grid item xs={12} sm={6} md={4}>
+          {/* कॉलम 3: संपर्क */}
+          <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
               Contact
             </Typography>
@@ -61,10 +71,10 @@ const Footer = () => {
           </Grid>
         </Grid>
 
-        {/* कॉपीराइट */}
+        {/* ========== कॉपीराइट ========== */}
         <Typography
           variant="body2"
-          sx={{ mt: 4, opacity: 0.6, textAlign: 'center' }}
+          sx={{ mt: 6, opacity: 0.6, textAlign: 'center' }}
         >
           &copy; {new Date().getFullYear()} SwasthHub. All rights reserved.
         </Typography>

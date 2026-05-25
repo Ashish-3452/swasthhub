@@ -2,15 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import {
-  Container,
-  Typography,
-  Card,
-  CardContent,
-  Grid,
-  Chip,
-  Button,
-  Skeleton,
-  Box,
+  Container, Typography, Card, Chip, Button, Skeleton, Box, Alert,
 } from '@mui/material';
 import { CalendarMonth, AccessTime, Person, Videocam } from '@mui/icons-material';
 import io from 'socket.io-client';

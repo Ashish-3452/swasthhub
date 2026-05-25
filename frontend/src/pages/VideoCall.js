@@ -1,60 +1,32 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import io from 'socket.io-client';
 import SimplePeer from 'simple-peer';
 import { Container, Typography, Button, Paper, Box, Grid, Alert } from '@mui/material';
-import { Videocam, PhoneForwarded, CallEnd } from '@mui/icons-material';
+import { Videocam, CallEnd } from '@mui/icons-material';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-
-const ENDPOINT = 'http://localhost:5000/api';
 
 const VideoCall = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const roomId = searchParams.get('room');
-  const role = searchParams.get('role'); // 'initiator' for doctor, 'receiver' for patient
-  const [callStatus, setCallStatus] = useState('connecting'); // 'connecting', 'connected', 'ended'
+  const role = searchParams.get('role'); // 'initiator' or 'receiver'
+  const [callStatus, setCallStatus] = useState('connecting');
   const [localStream, setLocalStream] = useState(null);
   const localVideo = useRef(null);
   const remoteVideo = useRef(null);
   const socketRef = useRef();
   const peerRef = useRef();
 
-  useEffect(() => {
-    if (!roomId) {
-      navigate('/dashboard');
-      return;
+  const endCall = useCallback(() => {
+    if (peerRef.current) peerRef.current.destroy();
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
     }
+    setCallStatus('ended');
+    setTimeout(() => navigate('/dashboard'), 1000);
+  }, [localStream, navigate]);
 
-    socketRef.current = io(ENDPOINT);
-
-    // कमरे में शामिल हों
-    socketRef.current.emit('join-room', roomId);
-
-    // अगर हम इनिशिएटर (डॉक्टर) हैं, तो कैमरा चालू करें और कॉल शुरू करें
-    if (role === 'initiator') {
-      startMediaAndCall(true);
-    } else {
-      // रिसीवर (मरीज़) होने पर, दूसरे के जुड़ने का इंतज़ार करें
-      setCallStatus('waiting');
-      socketRef.current.on('user-joined', () => {
-        startMediaAndCall(false);
-      });
-    }
-
-    // सिग्नलिंग डेटा प्राप्त करें
-    socketRef.current.on('signal', ({ from, data }) => {
-      if (peerRef.current) {
-        peerRef.current.signal(data);
-      }
-    });
-
-    return () => {
-      if (socketRef.current) socketRef.current.disconnect();
-      if (peerRef.current) peerRef.current.destroy();
-    };
-  }, [roomId, role]);
-
-  const startMediaAndCall = async (isInitiator) => {
+  const startMediaAndCall = useCallback(async (isInitiator) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setLocalStream(stream);
@@ -67,9 +39,7 @@ const VideoCall = () => {
       });
 
       peer.on('stream', (remoteStream) => {
-        if (remoteVideo.current) {
-          remoteVideo.current.srcObject = remoteStream;
-        }
+        if (remoteVideo.current) remoteVideo.current.srcObject = remoteStream;
         setCallStatus('connected');
       });
 
@@ -88,17 +58,38 @@ const VideoCall = () => {
       console.error('Media error:', err);
       setCallStatus('failed');
     }
-  };
+  }, [roomId]);
 
-  const endCall = () => {
-    if (peerRef.current) peerRef.current.destroy();
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
+  useEffect(() => {
+    if (!roomId) {
+      navigate('/dashboard');
+      return;
     }
-    setCallStatus('ended');
-    // वापस डैशबोर्ड पर जाएं
-    setTimeout(() => navigate('/dashboard'), 1000);
-  };
+
+    socketRef.current = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
+
+    socketRef.current.emit('join-room', roomId);
+
+    if (role === 'initiator') {
+      startMediaAndCall(true);
+    } else {
+      setCallStatus('waiting');
+      socketRef.current.on('user-joined', () => {
+        startMediaAndCall(false);
+      });
+    }
+
+    socketRef.current.on('signal', ({ from, data }) => {
+      if (peerRef.current) {
+        peerRef.current.signal(data);
+      }
+    });
+
+    return () => {
+      if (socketRef.current) socketRef.current.disconnect();
+      if (peerRef.current) peerRef.current.destroy();
+    };
+  }, [roomId, role, navigate, startMediaAndCall]);
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>

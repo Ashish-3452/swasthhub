@@ -5,7 +5,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <Box sx={{ bgcolor: '#0a192f', color: 'white', py: 6, mt: 8 }}>
+    <Box sx={{ bgcolor: '#b13106', color: 'white', py: 6, mt: 8 }}>
       <Container maxWidth="lg">
         <Grid container spacing={4}>
 

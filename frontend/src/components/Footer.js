@@ -8,6 +8,8 @@ const Footer = () => {
     <Box sx={{ bgcolor: '#0a192f', color: 'white', py: 6, mt: 8 }}>
       <Container maxWidth="lg">
         <Grid container spacing={4}>
+
+          {/* ब्रांड सेक्शन */}
           <Grid item xs={12} md={4}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
               SwasthHub
@@ -15,32 +17,55 @@ const Footer = () => {
             <Typography variant="body2" sx={{ opacity: 0.8, mb: 2 }}>
               AI-Integrated Telemedicine Platform connecting patients with trusted doctors in real‑time.
             </Typography>
-            <Box>
-              <IconButton color="inherit"><Facebook /></IconButton>
-              <IconButton color="inherit"><Twitter /></IconButton>
-              <IconButton color="inherit"><Instagram /></IconButton>
-              <IconButton color="inherit"><LinkedIn /></IconButton>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <IconButton color="inherit" aria-label="Facebook"><Facebook /></IconButton>
+              <IconButton color="inherit" aria-label="Twitter"><Twitter /></IconButton>
+              <IconButton color="inherit" aria-label="Instagram"><Instagram /></IconButton>
+              <IconButton color="inherit" aria-label="LinkedIn"><LinkedIn /></IconButton>
             </Box>
           </Grid>
-          <Grid item xs={12} md={4}>
+
+          {/* त्वरित लिंक */}
+          <Grid item xs={12} sm={6} md={4}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
               Quick Links
             </Typography>
-            <Link component={RouterLink} to="/doctors" color="inherit" display="block" sx={{ mb: 1 }}>Find Doctors</Link>
-            <Link component={RouterLink} to="/emergency" color="inherit" display="block" sx={{ mb: 1 }}>Emergency</Link>
-            <Link component={RouterLink} to="/symptom-checker" color="inherit" display="block" sx={{ mb: 1 }}>AI Symptom Checker</Link>
-            <Link component={RouterLink} to="/video-call" color="inherit" display="block" sx={{ mb: 1 }}>Video Call</Link>
+            <Link component={RouterLink} to="/doctors" color="inherit" display="block" sx={{ mb: 1, opacity: 0.8, '&:hover': { opacity: 1 } }}>
+              Find Doctors
+            </Link>
+            <Link component={RouterLink} to="/emergency" color="inherit" display="block" sx={{ mb: 1, opacity: 0.8, '&:hover': { opacity: 1 } }}>
+              Emergency
+            </Link>
+            <Link component={RouterLink} to="/symptom-checker" color="inherit" display="block" sx={{ mb: 1, opacity: 0.8, '&:hover': { opacity: 1 } }}>
+              AI Symptom Checker
+            </Link>
+            <Link component={RouterLink} to="/video-call" color="inherit" display="block" sx={{ mb: 1, opacity: 0.8, '&:hover': { opacity: 1 } }}>
+              Video Call
+            </Link>
           </Grid>
-          <Grid item xs={12} md={4}>
+
+          {/* संपर्क सेक्शन */}
+          <Grid item xs={12} sm={6} md={4}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
               Contact
             </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8 }}>support@swasthhub.com</Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8 }}>+91 9876543210</Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8 }}>New Delhi, India</Typography>
+            <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>
+              support@swasthhub.com
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>
+              +91 9876543210
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.8 }}>
+              New Delhi, India
+            </Typography>
           </Grid>
         </Grid>
-        <Typography variant="body2" align="center" sx={{ mt: 4, opacity: 0.6 }}>
+
+        {/* कॉपीराइट */}
+        <Typography
+          variant="body2"
+          sx={{ mt: 4, opacity: 0.6, textAlign: 'center' }}
+        >
           &copy; {new Date().getFullYear()} SwasthHub. All rights reserved.
         </Typography>
       </Container>

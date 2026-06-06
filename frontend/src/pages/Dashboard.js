@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import io from 'socket.io-client';
 import { Link as RouterLink, Navigate } from 'react-router-dom';
 import api from '../utils/api';
-import io from 'socket.io-client';
+
 
 import {
   Container,
@@ -34,22 +35,26 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // केवल मरीज़ के लिए इनकमिंग कॉल लिसनर
-    if (!user || user.role !== 'patient') return;
+  // केवल मरीज़ के लिए ही यह लिसनर चलाएं
+  if (!user || user.role !== 'patient') return;
 
-    const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
-    socket.emit('register-patient', user.id);
+  const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
+  
+  // मरीज़ को उसके ID से रजिस्टर करें ताकि डॉक्टर उसे ढूंढ सके
+  socket.emit('register-patient', user.id);
+  console.log('Patient registered on dashboard:', user.id);
 
-    socket.on('incoming-call', ({ roomId, message }) => {
-      if (window.confirm(message || 'Doctor is calling you. Join now?')) {
-        window.location.href = `/video-call?room=${roomId}&role=receiver`;
-      }
-    });
+  // इनकमिंग कॉल इवेंट सुनें
+  socket.on('incoming-call', ({ roomId, message }) => {
+    if (window.confirm(message || 'Doctor is calling you. Join now?')) {
+      window.location.href = `/video-call?room=${roomId}&role=receiver`;
+    }
+  });
 
-    return () => {
-      socket.disconnect();
-    };
-  }, [user]);
+  return () => {
+    socket.disconnect();
+  };
+}, [user]);
 
   useEffect(() => {
     if (!user) return;   // यह useEffect तब भी चल सकता है, पर user न हो तो कुछ न करें

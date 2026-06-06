@@ -147,7 +147,7 @@ const AIDoctorChat = () => {
       <Paper elevation={3} sx={{ height: 450, overflowY: 'auto', p: 2, mb: 2, bgcolor: '#fafafa', borderRadius: 2 }}>
         {messages.length === 0 && (
           <Typography color="text.secondary" sx={{ textAlign: 'center', mt: 8 }}>
-            नमस्ते! मैं आपका AI डॉक्टर हूँ। कृपया अपनी समस्या बताएं।
+            Hello! I am your AI doctor. Please tell us your problem.
           </Typography>
         )}
         {messages.map((msg, idx) => (
@@ -189,10 +189,10 @@ const AIDoctorChat = () => {
           </IconButton>
         </label>
         {imagePreview && <Box component="img" src={imagePreview} sx={{ width: 30, height: 30, borderRadius: 1 }} />}
-        <TextField fullWidth placeholder="अपनी समस्या बताएं... (Enter से भेजें)" value={input}
+        <TextField fullWidth placeholder="Please Enter Your Problem In Details.." value={input}
           onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown} size="small" />
         <Button variant="contained" endIcon={<Send />} onClick={handleSend} disabled={!input.trim() && !image}>
-          भेजें
+          Send
         </Button>
       </Box>
     </Container>

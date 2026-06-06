@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import SimplePeer from 'simple-peer';
 import { Container, Typography, Button, Paper, Box, Grid, Alert, CircularProgress } from '@mui/material';
@@ -18,8 +18,8 @@ const VideoCall = () => {
   const peerRef = useRef(null);
   const streamRef = useRef(null);
 
-  // ------ कॉल समाप्ति का साझा फ़ंक्शन ------
-  const handleEndCall = useCallback(() => {
+  // कॉल समाप्ति का साझा फ़ंक्शन (refs के साथ, कोई stale closure नहीं)
+  const endCallHandler = () => {
     if (peerRef.current) {
       peerRef.current.destroy();
       peerRef.current = null;
@@ -31,8 +31,8 @@ const VideoCall = () => {
     setCallStatus('ended');
     setTimeout(() => {
       navigate('/dashboard');
-    }, 2000); // "Call ended" मैसेज 2 सेकंड दिखेगा
-  }, [navigate]);
+    }, 2000);
+  };
 
   useEffect(() => {
     if (!roomId) return navigate('/dashboard');
@@ -43,19 +43,18 @@ const VideoCall = () => {
 
     socket.emit('join-room', roomId);
 
-    // ------ WebRTC सिग्नलिंग ------
+    // WebRTC सिग्नलिंग
     socket.on('signal', ({ from, data }) => {
       if (peerRef.current) {
         peerRef.current.signal(data);
       }
     });
 
-    // ------ जब दूसरा व्यक्ति कॉल समाप्त करे ------
+    // जब दूसरा व्यक्ति कॉल समाप्त करे
     socket.on('end-call', () => {
-      handleEndCall();
+      endCallHandler();
     });
 
-    // ------ setupPeer फ़ंक्शन ------
     const setupPeer = async (isInitiator) => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -79,8 +78,10 @@ const VideoCall = () => {
         });
 
         peer.on('close', () => {
-          // अगर पीयर बंद हो जाए (नेटवर्क ड्रॉप, आदि) तो भी कॉल समाप्त मानें
-          if (callStatus !== 'ended') setCallStatus('ended');
+          // अगर पीयर बंद हो जाए और अभी तक ended न किया हो तो
+          if (peerRef.current) {
+            setCallStatus('ended');
+          }
         });
 
         peerRef.current = peer;
@@ -91,7 +92,7 @@ const VideoCall = () => {
       }
     };
 
-    // ------ भूमिका के अनुसार शुरुआत ------
+    // भूमिका के अनुसार
     if (role === 'receiver') {
       setupPeer(false);
     } else if (role === 'initiator') {
@@ -101,6 +102,7 @@ const VideoCall = () => {
     }
 
     return () => {
+      // क्लीनअप – लेकिन endCallHandler यहाँ मत बुलाएँ, सिर्फ़ सॉकेट और पीयर छोड़ें
       if (peerRef.current) {
         peerRef.current.destroy();
         peerRef.current = null;
@@ -111,14 +113,14 @@ const VideoCall = () => {
       }
       socket.disconnect();
     };
-  }, [roomId, role, navigate, handleEndCall, callStatus]);
+    // डिपेंडेंसी ऐरे में केवल roomId, role, navigate — callStatus नहीं
+  }, [roomId, role, navigate]);
 
-  // ------ डॉक्टर/कोई भी End Call बटन दबाए ------
   const onEndCall = () => {
     if (socketRef.current) {
-      socketRef.current.emit('end-call'); // दूसरे पक्ष को सूचित करें
+      socketRef.current.emit('end-call');  // दूसरे पक्ष को सूचित करें
     }
-    handleEndCall();
+    endCallHandler();
   };
 
   return (

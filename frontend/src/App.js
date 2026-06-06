@@ -23,27 +23,27 @@ import VideoCall from './pages/VideoCall';
 import './customStyles.css';
 
 function App() {
-  // ------ ग्लोबल इनकमिंग कॉल लिसनर ------
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user || user.role !== 'patient') return;
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user || user.role !== 'patient') return;
 
-    const socketUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
-    const socket = io(socketUrl, { transports: ['websocket'] });
+  const socketUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
+  const socket = io(socketUrl, { transports: ['websocket'] });
 
-    socket.on('connect', () => {
-      socket.emit('register-patient', user.id);
-      console.log('Patient globally registered for calls');
-    });
+  socket.on('connect', () => {
+    socket.emit('register-patient', user.id);
+    console.log('Patient globally registered for calls');
+  });
 
-    socket.on('incoming-call', ({ roomId, message }) => {
-      if (window.confirm(message || 'Doctor is calling you. Join now?')) {
-        window.location.href = `/video-call?room=${roomId}&role=receiver`;
-      }
-    });
+  socket.on('incoming-call', ({ roomId, message }) => {
+    // कस्टम इवेंट डिस्पैच करें — यह CallNotification सुनेगा
+    const event = new CustomEvent('incoming-video-call', { detail: { roomId, message } });
+    window.dispatchEvent(event);
+  });
 
-    return () => socket.disconnect();
-  }, []);
+  return () => socket.disconnect();
+}, []);
+  
   return (
     <Router>
       <CssBaseline />

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import io from 'socket.io-client';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material';
 
 const CallNotification = () => {
@@ -8,25 +7,12 @@ const CallNotification = () => {
   const [incomingCall, setIncomingCall] = useState(null);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user) return;
-
-    const socketUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
-    const socket = io(socketUrl, { transports: ['websocket'] });
-
-    // अगर मरीज़ है तो उसे उसके निजी रूम में रजिस्टर करें ताकि डॉक्टर उसे ढूंढ सके
-    if (user.role === 'patient') {
-      socket.emit('register-patient', user.id);
-    }
-
-    // इनकमिंग कॉल का इवेंट सुनें
-    socket.on('incoming-call', (data) => {
-      setIncomingCall(data);
-    });
-
-    return () => {
-      socket.disconnect();
+    const handleIncomingCall = (event) => {
+      setIncomingCall(event.detail);
     };
+
+    window.addEventListener('incoming-video-call', handleIncomingCall);
+    return () => window.removeEventListener('incoming-video-call', handleIncomingCall);
   }, []);
 
   const handleAccept = () => {

@@ -34,18 +34,7 @@ const VideoCall = () => {
       }
     });
 
-    // ------ अगर मैं मरीज़ (receiver) हूँ, तो तुरंत तैयार हो जाऊँ ------
-    if (role === 'receiver') {
-      setupPeer(false); // false = initiator नहीं
-    }
-
-    // ------ अगर मैं डॉक्टर (initiator) हूँ, तो मरीज़ के आने का इंतज़ार करूँ ------
-    if (role === 'initiator') {
-      socket.on('user-joined', () => {
-        setupPeer(true); // true = initiator
-      });
-    }
-
+    // ------ setupPeer फ़ंक्शन पहले परिभाषित करें ------
     const setupPeer = async (isInitiator) => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -77,6 +66,17 @@ const VideoCall = () => {
         setCallStatus('failed');
       }
     };
+
+    // ------ अब स्थिति के अनुसार setupPeer को कॉल करें ------
+    if (role === 'receiver') {
+      // मरीज़ तुरंत तैयार होता है
+      setupPeer(false);
+    } else if (role === 'initiator') {
+      // डॉक्टर मरीज़ के रूम में आने का इंतज़ार करता है
+      socket.on('user-joined', () => {
+        setupPeer(true);
+      });
+    }
 
     return () => {
       if (peerRef.current) peerRef.current.destroy();

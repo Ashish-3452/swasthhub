@@ -27,16 +27,24 @@ const VideoCall = () => {
 
     socket.emit('join-room', roomId);
 
-    // दोनों पक्ष 'user-joined' का इंतज़ार करते हैं
-    socket.on('user-joined', () => {
-      setupPeer(role === 'initiator');
-    });
-
+    // ------ WebRTC सिग्नलिंग ------
     socket.on('signal', ({ from, data }) => {
       if (peerRef.current) {
         peerRef.current.signal(data);
       }
     });
+
+    // ------ अगर मैं मरीज़ (receiver) हूँ, तो तुरंत तैयार हो जाऊँ ------
+    if (role === 'receiver') {
+      setupPeer(false); // false = initiator नहीं
+    }
+
+    // ------ अगर मैं डॉक्टर (initiator) हूँ, तो मरीज़ के आने का इंतज़ार करूँ ------
+    if (role === 'initiator') {
+      socket.on('user-joined', () => {
+        setupPeer(true); // true = initiator
+      });
+    }
 
     const setupPeer = async (isInitiator) => {
       try {

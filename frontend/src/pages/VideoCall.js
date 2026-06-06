@@ -11,7 +11,7 @@ const VideoCall = () => {
   const roomId = searchParams.get('room');
   const role = searchParams.get('role') || 'initiator';
 
-  const [callStatus, setCallStatus] = useState('waiting'); // idle -> waiting -> connecting -> connected
+  const [callStatus, setCallStatus] = useState('waiting');
   const localVideo = useRef(null);
   const remoteVideo = useRef(null);
   const socketRef = useRef(null);
@@ -28,9 +28,20 @@ const VideoCall = () => {
     socket.emit('join-room', roomId);
     setCallStatus('waiting');
 
-    // ---- दोनों पक्ष 'user-joined' इवेंट का इंतज़ार करेंगे ----
+    // ---- दोनों पक्ष 'user-joined' का इंतज़ार करेंगे ----
     socket.on('user-joined', () => {
-      startMedia();
+      // मरीज़ (receiver) पहले अपना पीयर बनाएगा और डॉक्टर को बताएगा
+      if (role === 'receiver') {
+        setupReceiver();
+      }
+      // डॉक्टर (initiator) मरीज़ के तैयार होने का इंतज़ार करेगा
+    });
+
+    // ---- मरीज़ के तैयार होने पर डॉक्टर को सूचना ----
+    socket.on('receiver-ready', () => {
+      if (role === 'initiator') {
+        setupInitiator();
+      }
     });
 
     // ---- WebRTC सिग्नलिंग ----
@@ -40,13 +51,48 @@ const VideoCall = () => {
       }
     });
 
-    const startMedia = async () => {
+    // ---- मरीज़ अपना पीयर तैयार करता है ----
+    const setupReceiver = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         streamRef.current = stream;
         if (localVideo.current) localVideo.current.srcObject = stream;
 
-        const peer = new SimplePeer({ initiator: role === 'initiator', stream });
+        const peer = new SimplePeer({ initiator: false, stream });
+
+        peer.on('signal', (data) => {
+          socket.emit('signal', { roomId, data });
+        });
+
+        peer.on('stream', (remoteStream) => {
+          if (remoteVideo.current) remoteVideo.current.srcObject = remoteStream;
+          setCallStatus('connected');
+        });
+
+        peer.on('error', (err) => {
+          console.error('Peer error:', err);
+          setCallStatus('failed');
+        });
+
+        peer.on('close', () => setCallStatus('ended'));
+
+        peerRef.current = peer;
+        socket.emit('receiver-ready'); // डॉक्टर को बताएँ कि मरीज़ तैयार है
+        setCallStatus('connecting');
+      } catch (err) {
+        console.error('Media error:', err);
+        setCallStatus('failed');
+      }
+    };
+
+    // ---- डॉक्टर मरीज़ के तैयार होने के बाद शुरू करता है ----
+    const setupInitiator = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        streamRef.current = stream;
+        if (localVideo.current) localVideo.current.srcObject = stream;
+
+        const peer = new SimplePeer({ initiator: true, stream });
 
         peer.on('signal', (data) => {
           socket.emit('signal', { roomId, data });

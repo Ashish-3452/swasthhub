@@ -1,3 +1,4 @@
+import IncomingCallHandler from './components/IncomingCallHandler';
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AIDoctorChat from './pages/AIDoctorChat';
@@ -24,6 +25,7 @@ function App() {
   return (
     <Router>
       <CssBaseline />
+      <IncomingCallHandler />
     <Navbar />
       <Routes>
         <Route path="/" element={<Home />} /> 

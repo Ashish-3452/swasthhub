@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import io from 'socket.io-client';
 import SimplePeer from 'simple-peer';
 import { Container, Typography, Button, Paper, Box, Grid, Alert, CircularProgress } from '@mui/material';
@@ -18,8 +18,8 @@ const VideoCall = () => {
   const peerRef = useRef(null);
   const streamRef = useRef(null);
 
-  // कॉल समाप्ति का साझा फ़ंक्शन (refs के साथ, कोई stale closure नहीं)
-  const endCallHandler = () => {
+  // साझा कॉल-समाप्ति हैंडलर – स्थिर, क्योंकि navigate बदलता नहीं
+  const endCallHandler = useCallback(() => {
     if (peerRef.current) {
       peerRef.current.destroy();
       peerRef.current = null;
@@ -32,7 +32,7 @@ const VideoCall = () => {
     setTimeout(() => {
       navigate('/dashboard');
     }, 2000);
-  };
+  }, [navigate]);
 
   useEffect(() => {
     if (!roomId) return navigate('/dashboard');
@@ -50,10 +50,8 @@ const VideoCall = () => {
       }
     });
 
-    // जब दूसरा व्यक्ति कॉल समाप्त करे
-    socket.on('end-call', () => {
-      endCallHandler();
-    });
+    // दूसरे पक्ष द्वारा कॉल समाप्त
+    socket.on('end-call', endCallHandler);
 
     const setupPeer = async (isInitiator) => {
       try {
@@ -78,7 +76,6 @@ const VideoCall = () => {
         });
 
         peer.on('close', () => {
-          // अगर पीयर बंद हो जाए और अभी तक ended न किया हो तो
           if (peerRef.current) {
             setCallStatus('ended');
           }
@@ -102,7 +99,6 @@ const VideoCall = () => {
     }
 
     return () => {
-      // क्लीनअप – लेकिन endCallHandler यहाँ मत बुलाएँ, सिर्फ़ सॉकेट और पीयर छोड़ें
       if (peerRef.current) {
         peerRef.current.destroy();
         peerRef.current = null;
@@ -113,14 +109,13 @@ const VideoCall = () => {
       }
       socket.disconnect();
     };
-    // डिपेंडेंसी ऐरे में केवल roomId, role, navigate — callStatus नहीं
-  }, [roomId, role, navigate]);
+  }, [roomId, role, navigate, endCallHandler]); // endCallHandler स्थिर है, सब ठीक है
 
   const onEndCall = () => {
     if (socketRef.current) {
-      socketRef.current.emit('end-call');  // दूसरे पक्ष को सूचित करें
+      socketRef.current.emit('end-call');   // दूसरे को सूचना
     }
-    endCallHandler();
+    endCallHandler();   // स्थानीय समाप्ति
   };
 
   return (

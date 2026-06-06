@@ -1,10 +1,5 @@
-import React, { useEffect } from 'react';   // या अगर पहले से React इम्पोर्ट है तो useEffect जोड़ें
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import io from 'socket.io-client';           // यह नई लाइन
-import CssBaseline from '@mui/material/CssBaseline';
-import Navbar from './components/Navbar';
-// ... बाकी इम्पोर्ट
-import React from 'react';
+import { useEffect } from 'react';
+import io from 'socket.io-client';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AIDoctorChat from './pages/AIDoctorChat';
 import Navbar from './components/Navbar';

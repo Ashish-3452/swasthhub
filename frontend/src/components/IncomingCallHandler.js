@@ -9,9 +9,20 @@ const IncomingCallHandler = () => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user || user.role !== 'patient') return;
 
-    const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
-    socket.emit('register-patient', user.id);
-    console.log('Global patient registered:', user.id);
+    const socketUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
+
+    const socket = io(socketUrl, {
+      transports: ['websocket', 'polling'],
+      withCredentials: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+    });
+
+    socket.on('connect', () => {
+      console.log('IncomingCallHandler connected:', socket.id);
+      socket.emit('register-patient', user.id);
+    });
 
     socket.on('incoming-call', ({ roomId, message }) => {
       if (window.confirm(message || 'Doctor is calling you. Join now?')) {
@@ -19,12 +30,16 @@ const IncomingCallHandler = () => {
       }
     });
 
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error.message);
+    });
+
     return () => {
       socket.disconnect();
     };
-  }, [navigate]); // खाली डिपेंडेंसी नहीं, बल्कि navigate को शामिल करें (stable)
+  }, [navigate]);
 
-  return null; // यह कम्पोनेंट कुछ भी रेंडर नहीं करता
+  return null;
 };
 
 export default IncomingCallHandler;

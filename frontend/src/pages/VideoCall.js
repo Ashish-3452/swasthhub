@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import io from 'socket.io-client';
 import SimplePeer from 'simple-peer';
 import { Container, Typography, Button, Paper, Box, Grid, Alert, CircularProgress } from '@mui/material';
@@ -18,6 +18,22 @@ const VideoCall = () => {
   const peerRef = useRef(null);
   const streamRef = useRef(null);
 
+  // ------ कॉल समाप्ति का साझा फ़ंक्शन ------
+  const handleEndCall = useCallback(() => {
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setCallStatus('ended');
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 2000); // "Call ended" मैसेज 2 सेकंड दिखेगा
+  }, [navigate]);
+
   useEffect(() => {
     if (!roomId) return navigate('/dashboard');
 
@@ -34,7 +50,12 @@ const VideoCall = () => {
       }
     });
 
-    // ------ setupPeer फ़ंक्शन पहले परिभाषित करें ------
+    // ------ जब दूसरा व्यक्ति कॉल समाप्त करे ------
+    socket.on('end-call', () => {
+      handleEndCall();
+    });
+
+    // ------ setupPeer फ़ंक्शन ------
     const setupPeer = async (isInitiator) => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -57,7 +78,10 @@ const VideoCall = () => {
           setCallStatus('failed');
         });
 
-        peer.on('close', () => setCallStatus('ended'));
+        peer.on('close', () => {
+          // अगर पीयर बंद हो जाए (नेटवर्क ड्रॉप, आदि) तो भी कॉल समाप्त मानें
+          if (callStatus !== 'ended') setCallStatus('ended');
+        });
 
         peerRef.current = peer;
         setCallStatus('connecting');
@@ -67,28 +91,34 @@ const VideoCall = () => {
       }
     };
 
-    // ------ अब स्थिति के अनुसार setupPeer को कॉल करें ------
+    // ------ भूमिका के अनुसार शुरुआत ------
     if (role === 'receiver') {
-      // मरीज़ तुरंत तैयार होता है
       setupPeer(false);
     } else if (role === 'initiator') {
-      // डॉक्टर मरीज़ के रूम में आने का इंतज़ार करता है
       socket.on('user-joined', () => {
         setupPeer(true);
       });
     }
 
     return () => {
-      if (peerRef.current) peerRef.current.destroy();
-      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+      if (peerRef.current) {
+        peerRef.current.destroy();
+        peerRef.current = null;
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
       socket.disconnect();
     };
-  }, [roomId, role, navigate]);
+  }, [roomId, role, navigate, handleEndCall, callStatus]);
 
-  const endCall = () => {
-    if (peerRef.current) peerRef.current.destroy();
-    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    navigate('/dashboard');
+  // ------ डॉक्टर/कोई भी End Call बटन दबाए ------
+  const onEndCall = () => {
+    if (socketRef.current) {
+      socketRef.current.emit('end-call'); // दूसरे पक्ष को सूचित करें
+    }
+    handleEndCall();
   };
 
   return (
@@ -101,8 +131,8 @@ const VideoCall = () => {
         {callStatus === 'waiting' && <Alert severity="info">Waiting for other person to join...</Alert>}
         {callStatus === 'connecting' && <CircularProgress sx={{ my: 2 }} />}
         {callStatus === 'connected' && <Alert severity="success">Connected!</Alert>}
+        {callStatus === 'ended' && <Alert severity="warning">Call ended. Redirecting to dashboard...</Alert>}
         {callStatus === 'failed' && <Alert severity="error">Connection failed. Please try again.</Alert>}
-        {callStatus === 'ended' && <Alert severity="warning">Call ended.</Alert>}
 
         <Grid container spacing={2} justifyContent="center" sx={{ mt: 2 }}>
           <Grid item xs={12} sm={6}>
@@ -118,7 +148,7 @@ const VideoCall = () => {
         </Grid>
 
         <Box sx={{ mt: 3 }}>
-          <Button variant="contained" color="error" startIcon={<CallEnd />} onClick={endCall}>
+          <Button variant="contained" color="error" startIcon={<CallEnd />} onClick={onEndCall}>
             End Call
           </Button>
         </Box>

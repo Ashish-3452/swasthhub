@@ -12,11 +12,7 @@ const IncomingCallHandler = () => {
     const socketUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 
     const socket = io(socketUrl, {
-      transports: ['websocket', 'polling'],
-      withCredentials: false,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
+      transports: ['websocket'],   // केवल WebSocket, कोई पोलिंग नहीं
     });
 
     socket.on('connect', () => {

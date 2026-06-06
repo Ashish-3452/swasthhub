@@ -19,7 +19,9 @@ const MyAppointments = () => {
 
   useEffect(() => {
     fetchAppointments();
-    socket = io(ENDPOINT);
+    socket = io(ENDPOINT, {
+    transports: ['websocket']
+  });
     return () => {
       if (socket) socket.disconnect();
     };

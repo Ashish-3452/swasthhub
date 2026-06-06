@@ -1,9 +1,10 @@
-import IncomingCallHandler from './components/IncomingCallHandler';
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AIDoctorChat from './pages/AIDoctorChat';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import CallNotification from './components/CallNotification';
 import CssBaseline from '@mui/material/CssBaseline';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -25,7 +26,7 @@ function App() {
   return (
     <Router>
       <CssBaseline />
-      <IncomingCallHandler />
+      <CallNotification />
     <Navbar />
       <Routes>
         <Route path="/" element={<Home />} /> 

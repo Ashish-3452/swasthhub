@@ -15,30 +15,54 @@ const Home = () => {
   const navigate = useNavigate();
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ total: 0, online: 0 });
+  const [stats, setStats] = useState({
+  totalDoctors: 0,
+  onlineDoctors: 0,
+  totalAppointments: null,
+  averageRating: null,
+});
   const [specialties, setSpecialties] = useState([]);
+  
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await api.get('/doctors');
-        const list = res.data;
-        setDoctors(list);
-        // आँकड़े
-        const online = list.filter(d => d.isOnline).length;
-        setStats({ total: list.length, online });
-        // स्पेशलिटीज़ (unique)
-        const specs = [...new Set(list.map(d => d.specialization).filter(Boolean))];
-        setSpecialties(specs.slice(0, 8)); // ज़्यादा न दिखाएँ
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const fetchData = async () => {
+    try {
+      // 1. डॉक्टरों की लिस्ट लाएँ
+      const doctorsRes = await api.get('/doctors');
+      const list = doctorsRes.data;
+      const total = list.length;
+      const online = list.filter(d => d.isOnline).length;
 
+      // 2. अपॉइंटमेंट की कुल संख्या (यह एंडपॉइंट अभी हो या न हो)
+      let totalApps = null;
+      try {
+        const appsRes = await api.get('/appointments/count');
+        totalApps = appsRes.data.count;
+      } catch (e) {
+        console.warn('Appointments count API not available, will show placeholder');
+      }
+
+      // 3. स्टेट अपडेट करें
+      setStats({
+        totalDoctors: total,
+        onlineDoctors: online,
+        totalAppointments: totalApps,   // अगर मिला तो संख्या, वरना null
+        averageRating: null,            // अभी रेटिंग सिस्टम नहीं है
+      });
+
+      setDoctors(list);
+
+      // 4. स्पेशलिटीज़ निकालें
+      const specs = [...new Set(list.map(d => d.specialization).filter(Boolean))];
+      setSpecialties(specs.slice(0, 8));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchData();
+}, []);
   // फ़ीचर्ड डॉक्टर (सिर्फ़ 3 जिनकी रेटिंग/अनुभव ज़्यादा – यहाँ हम बस पहले 3 लेते हैं)
   const featured = doctors.slice(0, 3);
 
@@ -82,45 +106,114 @@ const Home = () => {
         </Container>
       </Box>
 
-      {/* ========== आँकड़े ========== */}
       <Container maxWidth="lg" sx={{ mt: -5, mb: 8 }}>
-        <Grid container spacing={2}>
-          {loading ? (
-            <Skeleton variant="rectangular" width="100%" height={100} />
-          ) : (
-            <>
-              <Grid item xs={6} md={3}>
-                <Paper elevation={2} sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}>
-                  <LocalHospital color="primary" sx={{ fontSize: 40 }} />
-                  <Typography variant="h5" fontWeight="bold">{stats.total}+</Typography>
-                  <Typography variant="body2">Verified Doctors</Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={6} md={3}>
-                <Paper elevation={2} sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}>
-                  <People color="primary" sx={{ fontSize: 40 }} />
-                  <Typography variant="h5" fontWeight="bold">{stats.online}</Typography>
-                  <Typography variant="body2">Online Now</Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={6} md={3}>
-                <Paper elevation={2} sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}>
-                  <Videocam color="primary" sx={{ fontSize: 40 }} />
-                  <Typography variant="h5" fontWeight="bold">1M+</Typography>
-                  <Typography variant="body2">Consultations</Typography>
-                </Paper>
-              </Grid>
-              <Grid item xs={6} md={3}>
-                <Paper elevation={2} sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}>
-                  <Star color="primary" sx={{ fontSize: 40 }} />
-                  <Typography variant="h5" fontWeight="bold">4.8</Typography>
-                  <Typography variant="body2">User Rating</Typography>
-                </Paper>
-              </Grid>
-            </>
-          )}
-        </Grid>
-      </Container>
+  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+    <Grid container spacing={4} sx={{ maxWidth: 900 }}>
+      {loading ? (
+        // स्केलेटन लोडिंग
+        Array.from({ length: 4 }).map((_, i) => (
+          <Grid item xs={6} md={3} key={i}>
+            <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 2 }} />
+          </Grid>
+        ))
+      ) : (
+        <>
+          {/* कार्ड 1: Verified Doctors */}
+          <Grid item xs={6} md={3}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                textAlign: 'center',
+                borderRadius: 2,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <LocalHospital color="primary" sx={{ fontSize: 40, mb: 1 }} />
+              <Typography variant="h5" fontWeight="bold">
+                {stats.totalDoctors}+
+              </Typography>
+              <Typography variant="body2">Verified Doctors</Typography>
+            </Paper>
+          </Grid>
+
+          {/* कार्ड 2: Online Now */}
+          <Grid item xs={6} md={3}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                textAlign: 'center',
+                borderRadius: 2,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <People color="primary" sx={{ fontSize: 40, mb: 1 }} />
+              <Typography variant="h5" fontWeight="bold">
+                {stats.onlineDoctors}
+              </Typography>
+              <Typography variant="body2">Online Now</Typography>
+            </Paper>
+          </Grid>
+
+          {/* कार्ड 3: Total Consultations (असली अपॉइंटमेंट संख्या) */}
+          <Grid item xs={6} md={3}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                textAlign: 'center',
+                borderRadius: 2,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Videocam color="primary" sx={{ fontSize: 40, mb: 1 }} />
+              <Typography variant="h5" fontWeight="bold">
+                {stats.totalAppointments !== null ? `${stats.totalAppointments}+` : '...'}
+              </Typography>
+              <Typography variant="body2">Consultations</Typography>
+            </Paper>
+          </Grid>
+
+          {/* कार्ड 4: User Rating (अभी कोई सिस्टम नहीं) */}
+          <Grid item xs={6} md={3}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                textAlign: 'center',
+                borderRadius: 2,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Star color="primary" sx={{ fontSize: 40, mb: 1 }} />
+              <Typography variant="h5" fontWeight="bold">
+                N/A
+              </Typography>
+              <Typography variant="body2">User Rating</Typography>
+            </Paper>
+          </Grid>
+        </>
+      )}
+    </Grid>
+  </Box>
+</Container>
 
       {/* ========== कैसे काम करता है ========== */}
       <Container maxWidth="lg" sx={{ mb: 8 }}>
@@ -208,7 +301,7 @@ const Home = () => {
         <Container maxWidth="md" sx={{ textAlign: 'center' }}>
           <PhoneAndroid sx={{ fontSize: 50, mb: 2 }} />
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Download the SwasthHub App
+            Coming soon Mobile Application
           </Typography>
           <Typography variant="body1" sx={{ mb: 4, opacity: 0.8 }}>
             Book appointments, consult doctors, and manage your health on the go.

@@ -83,7 +83,7 @@ const Dashboard = () => {
     { label: 'Book Appointment', icon: <CalendarMonth />, path: '/book-appointment', color: '#2e7d32' },
     { label: 'My Appointments', icon: <Article />, path: '/my-appointments', color: '#0288d1' },
     { label: 'Video Call', icon: <Videocam />, path: '/video-call', color: '#7c4dff' },
-    { label: 'AI Checker', icon: <Psychology />, path: '/symptom-checker', color: '#ed6c02' },
+    { label: 'AI Doctor', icon: <Psychology />, path: '/symptom-checker', color: '#ed6c02' },
     { label: 'Emergency', icon: <Emergency />, path: '/emergency', color: '#d32f2f' },
   ];
 

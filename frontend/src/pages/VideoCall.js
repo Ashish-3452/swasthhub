@@ -11,7 +11,7 @@ const VideoCall = () => {
   const roomId = searchParams.get('room');
   const role = searchParams.get('role') || 'initiator';
 
-  const [callStatus, setCallStatus] = useState('connecting');
+  const [callStatus, setCallStatus] = useState('waiting'); // idle -> waiting -> connecting -> connected
   const localVideo = useRef(null);
   const remoteVideo = useRef(null);
   const socketRef = useRef(null);
@@ -26,8 +26,21 @@ const VideoCall = () => {
     const socket = socketRef.current;
 
     socket.emit('join-room', roomId);
+    setCallStatus('waiting');
 
-    const startCall = async () => {
+    // ---- दोनों पक्ष 'user-joined' इवेंट का इंतज़ार करेंगे ----
+    socket.on('user-joined', () => {
+      startMedia();
+    });
+
+    // ---- WebRTC सिग्नलिंग ----
+    socket.on('signal', ({ from, data }) => {
+      if (peerRef.current) {
+        peerRef.current.signal(data);
+      }
+    });
+
+    const startMedia = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         streamRef.current = stream;
@@ -35,32 +48,29 @@ const VideoCall = () => {
 
         const peer = new SimplePeer({ initiator: role === 'initiator', stream });
 
-        peer.on('signal', (data) => socket.emit('signal', { roomId, data }));
+        peer.on('signal', (data) => {
+          socket.emit('signal', { roomId, data });
+        });
+
         peer.on('stream', (remoteStream) => {
           if (remoteVideo.current) remoteVideo.current.srcObject = remoteStream;
           setCallStatus('connected');
         });
-        peer.on('error', (err) => { console.error(err); setCallStatus('failed'); });
+
+        peer.on('error', (err) => {
+          console.error('Peer error:', err);
+          setCallStatus('failed');
+        });
+
         peer.on('close', () => setCallStatus('ended'));
 
         peerRef.current = peer;
-        if (role !== 'initiator') setCallStatus('waiting');
+        setCallStatus('connecting');
       } catch (err) {
-        console.error(err);
+        console.error('Media error:', err);
         setCallStatus('failed');
       }
     };
-
-    socket.on('user-joined', () => {
-      if (role !== 'initiator') startCall();
-    });
-
-    socket.on('signal', ({ from, data }) => {
-      if (peerRef.current) peerRef.current.signal(data);
-    });
-
-    if (role === 'initiator') startCall();
-    if (role === 'receiver') setCallStatus('waiting');
 
     return () => {
       if (peerRef.current) peerRef.current.destroy();

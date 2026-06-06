@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import io from 'socket.io-client';
+
 import { Link as RouterLink, Navigate } from 'react-router-dom';
 import api from '../utils/api';
 
